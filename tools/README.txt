@@ -19,3 +19,5 @@ http://docs.aws.amazon.com/cli/latest/userguide/awscli-install-linux.html
 receive udp packets
 socat UDP-RECV:4120 STDOUT | cat > udp.txt &
 
+timestamped - put this in rc.local
+socat UDP-RECV:4120 STDOUT | ts %Y-%m-%dT%T, > /tmp/batteries.log&
