@@ -9,7 +9,7 @@ cd /tmp
 wget http://ipecho.net/plain
 online=$?
 	if [ $online -eq 0 ]; then
-		/root/.local/bin/aws s3 mv plain s3://mornington-admin
+		/root/.local/bin/aws s3 mv plain s3://mornington-admin/ownip.txt
 	fi
 
 
