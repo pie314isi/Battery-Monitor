@@ -9,14 +9,14 @@ sleep 1
 check_responding.sh
 
 #and shut them all up for a while
-echo Q | nc -q1 -u -b 192.168.1.255 4210; 
+cast.sh Q
 
 grep IPADDRESS /tmp/responses.txt | cut -d, -f3 | sort -u | cut -d" " -f3 > /tmp/iplist.txt
 
 for ip in `cat /tmp/iplist.txt | grep -v IPADDRESS` 
 	do
         echo $ip 
-	echo Q | nc -q1 -u -b 192.168.1.255 4210; 
+        cast.sh Q
         echo I | nc -q1 -u -b $ip 4210; 
         echo U | nc -q1 -u -b $ip 4210; 
 	sleep 20
