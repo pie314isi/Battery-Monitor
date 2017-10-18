@@ -10,7 +10,7 @@ extern "C" {
 #define BUTTON      D0
 #define nOLED       D1
 #define RLED        D2
-#define nISENSOR    D3 // the resistor provide for on D8 already has a pull down, so we'll use D3 and a link under the board
+#define nISENSOR    D8 // the resistor provide for on D8 already has a pull down, so we'll use D3 and a link under the board
 #define BUILTINLED  D4
 
 
@@ -34,19 +34,22 @@ char macstr[20];
 
 
 unsigned int counter=0;
+unsigned int updatecounter=100-1;
 
 unsigned int quiettimer=0;
+unsigned int isense=0;
 
 void setup()
 {
   pinMode(BUTTON, INPUT_PULLUP);
   pinMode(BUILTINLED, OUTPUT);
 
-  pinMode(nISENSOR, INPUT_PULLUP);
-
+  
   digitalWrite(BUTTON, HIGH);
   digitalWrite(BUILTINLED,HIGH);
   Serial.begin(115200);
+
+  
 
     
   Serial.printf("Connecting to %s ", ssid);
@@ -78,6 +81,16 @@ void setup()
   
   Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
 
+  pinMode(nISENSOR, OUTPUT);
+  digitalWrite(nISENSOR, HIGH);
+  delay(100);
+  pinMode(nISENSOR, INPUT);
+  delayMicroseconds(10);
+  
+  isense=digitalRead(nISENSOR);
+  if(isense) updatecounter=10-1;  // if it's a current sensor, then default to one second updates
+
+
   // at boot time, each device should do a http get to read its operating paramters. eg. update rate, upd ports, maybe others
 }
 
@@ -108,7 +121,7 @@ void loop()
     counter++;
     Serial.printf("Main loop counter: %d\n", counter);   
 
-    for(int i=0; i<99; i++)
+    for(int i=0; i<updatecounter; i++)
         {
         delay(100);
         if(!digitalRead(BUTTON)) 
@@ -147,6 +160,14 @@ void loop()
                   delay(localip[3]*1000);
                   Serial.printf("reset\n");   
                   ESP.reset();
+                  break;
+
+                case 'A':
+                  updatecounter = 100-1; // ten second update rate
+                  break;
+
+                case 'a':
+                  updatecounter = 9-1;  // one second update rate
                   break;
 
         
@@ -198,14 +219,17 @@ void loop()
     //Serial.printf("talking to : %s\n", Udp.remoteIP().toString().c_str());
     if(quiettimer==0)
       {
+
       digitalWrite(BUILTINLED,LOW);
       delay(100);
       digitalWrite(BUILTINLED,HIGH);
+
+
   
       Udp.beginPacket(serverip, 4120);
       long rssi = WiFi.RSSI();
       
-      sprintf(periodicPacket, "%s, %d, %d, %d, %d, %d, %d\n",macstr, rssi, counter, (int) (analogRead(A0)), digitalRead(D1), digitalRead(D2), digitalRead(nISENSOR));
+      sprintf(periodicPacket, "%s, %d, %d, %d, %d, %d, %d\n",macstr, rssi, counter, (int) (analogRead(A0)), digitalRead(D1), digitalRead(D2), isense);
       Udp.write(periodicPacket);
       Udp.endPacket();
       }
