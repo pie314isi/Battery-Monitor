@@ -20,11 +20,11 @@ extern "C" {
 // look at finding gateway address automagically - perhaps find it by name with mDNS
 // how do we make the wifi autodiscover SSID and WPA key? maybe use unencrypted? does that help?
 
-const char* ssid = "Mornington";
-const char* password = "Mornington";
+const char* ssid = "batteryfarm";
+const char* password = "M0rnington";
 
 WiFiUDP Udp;
-IPAddress serverip(192, 168, 1, 192);
+IPAddress serverip;
 unsigned int localUdpPort = 4210;  // local port to listen on
 char incomingPacket[255];  // buffer for incoming packets
 char  periodicPacket[80];  // a reply string to send back
@@ -72,6 +72,12 @@ void setup()
 
   Udp.begin(localUdpPort);
   Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
+
+  serverip = WiFi.localIP();
+  serverip[3]=192; // make the default server ip be xx.xx.xx.192 - we can send a broadcast packet to override it later
+
+  Serial.printf("default server IP %s\n", serverip.toString().c_str());
+
   
   Udp.beginPacket(serverip, 4120);  
   
@@ -79,7 +85,8 @@ void setup()
   Udp.write(periodicPacket);
   Udp.endPacket();
   
-  Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
+  
+  
 
   pinMode(nISENSOR, OUTPUT);
   digitalWrite(nISENSOR, HIGH);
@@ -195,6 +202,19 @@ void loop()
                   Udp.endPacket();
         
                   break;
+
+                case 'i':
+                  serverip = Udp.remoteIP();
+                  Serial.printf("New server IP %s\n", serverip.toString().c_str());
+  
+                  Udp.beginPacket(serverip, 4120);  
+                  
+                  sprintf(periodicPacket, "%s, NEW SERVER %s\n",macstr, serverip.toString().c_str() );
+                  Udp.write(periodicPacket);
+                  Udp.endPacket();
+        
+                  break;
+
 
                case 'V':
                   Udp.beginPacket(serverip, 4120);  
